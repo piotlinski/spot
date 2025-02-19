@@ -54,33 +54,33 @@ class PascalVOC(Dataset):
         img = Image.open(img_fp)
 
         if self.split=='trainaug':
-            
+
             img = self.train_transform(img)
-            
+
             return img
-   
+
         elif self.split=='val':
-            
+
             mask_class    = Image.open(mask_fp_class)
             mask_instance = Image.open(mask_fp_instance)
-            
+
             img = self.val_transform_image(img)
-            
+
             mask_class = self.val_transform_mask(mask_class).squeeze().long()
             mask_class[mask_class==255]=0 # Ignore objects' boundaries
 
             mask_instance = self.val_transform_mask(mask_instance).squeeze().long()
             mask_instance[mask_instance==255]=0 # Ignore objects' boundaries
-            
+
             ignore_mask = torch.zeros((1,self.mask_size,self.mask_size), dtype=torch.long) # There is no overlapping in VOC
 
             return img, mask_instance, mask_class, ignore_mask
-        
+
         else:
-            
+
             mask_class    = Image.open(mask_fp_class)
             mask_instance = Image.open(mask_fp_instance)
-            
+
             return img, mask_instance.long(), mask_instance.squeeze()
 
 
@@ -100,9 +100,9 @@ class COCO2017(Dataset):
     CAT_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19,
  20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
  43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
- 64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 
+ 64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88,
  89, 90]
-    
+
     assert(NUM_CLASSES) == len(set(CAT_LIST))
 
     def __init__(self, root, split='train', year='2017', image_size=224, mask_size=224, return_gt_in_train=False):
@@ -118,7 +118,7 @@ class COCO2017(Dataset):
         self.return_gt_in_train = return_gt_in_train
 
         self.ids = list(self.coco.imgs.keys())
-        
+
         self.train_transform = transforms.Compose([
                             transforms.Resize(size=image_size, interpolation=transforms.InterpolationMode.BILINEAR),
                             transforms.CenterCrop(image_size),
@@ -126,7 +126,7 @@ class COCO2017(Dataset):
                             transforms.ToTensor(),
                             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
                         ])
-        
+
         self.val_transform_image = transforms.Compose([transforms.Resize(size = image_size, interpolation=transforms.InterpolationMode.BILINEAR),
                                transforms.CenterCrop(size = image_size),
                                transforms.ToTensor(),
@@ -141,9 +141,9 @@ class COCO2017(Dataset):
         img, mask_instance, mask_class, mask_ignore = self._make_img_gt_point_pair(index)
 
         if self.split == "train" and (self.return_gt_in_train is False):
-            
+
             img = self.train_transform(img)
-            
+
             return img
         elif self.split == "train" and (self.return_gt_in_train is True):
             img = self.val_transform_image(img)
@@ -156,19 +156,19 @@ class COCO2017(Dataset):
                 mask_class = TF.hflip(mask_class)
                 mask_instance = TF.hflip(mask_instance)
                 mask_ignore = TF.hflip(mask_ignore)
-            
+
             mask_class = mask_class.squeeze().long()
             mask_instance = mask_instance.squeeze().long()
             mask_ignore = mask_ignore.squeeze().long()
 
-            return img, mask_instance, mask_class, mask_ignore        
+            return img, mask_instance, mask_class, mask_ignore
         elif self.split =='val':
 
             img = self.val_transform_image(img)
             mask_class = self.val_transform_mask(mask_class).squeeze().long()
             mask_instance = self.val_transform_mask(mask_instance).squeeze().long()
             mask_ignore = self.val_transform_mask(mask_ignore).squeeze().long().unsqueeze(0)
-            
+
             return img, mask_instance, mask_class, mask_ignore
         else:
             raise
@@ -220,20 +220,20 @@ class COCO2017(Dataset):
 
 class MOVi(Dataset):
     def __init__(self, root, split, image_size, mask_size, num_segs=25, frames_per_clip=24, img_glob='*_image.png', predefined_json_paths = None):
-        
+
         self.root = root
         self.split = split
         self.image_size = image_size
         self.mask_size = mask_size
         self.total_dirs = sorted(glob.glob(os.path.join(root, '*')))
         self.frames_per_clip = frames_per_clip
-        
+
         if self.split == 'train' and predefined_json_paths is not None:
             with open(predefined_json_paths, 'r') as fp:
                 paths_persistence = json.load(fp)
             self.rgb = [Path(p) for p in paths_persistence['rgb']]
             self.mask = [[Path(p) for p in m] for m in paths_persistence['mask']]
-            
+
         else:
             self.rgb = []
             self.mask = []
@@ -248,25 +248,25 @@ class MOVi(Dataset):
                     image_paths = sorted(image_paths)
                 for image_path in image_paths:
                     p = Path(image_path)
-    
+
                     frame_buffer.append(p)
                     mask_buffer.append([
                         p.parent / f"{p.stem.split('_')[0]}_mask_{n:02}.png" for n in range(num_segs)
                     ])
-    
+
                 self.rgb.extend(frame_buffer)
                 self.mask.extend(mask_buffer)
                 frame_buffer = []
                 mask_buffer = []
-            
+
         if self.split == 'train' and predefined_json_paths is None:
             paths_persistence = dict(rgb=[str(p) for p in self.rgb], mask=[[str(p) for p in m] for m in self.mask])
-                    
+
             with open(self.split+'_movi_paths.json', 'w') as fp:
                 json.dump(paths_persistence, fp)
-        
+
         self.train_transform = transforms.Compose([transforms.ToTensor(),
-                                             transforms.Normalize((0.485, 0.456, 0.406), 
+                                             transforms.Normalize((0.485, 0.456, 0.406),
                                                                   (0.229, 0.224, 0.225))])
         self.val_transforms = transforms.ToTensor()
 
@@ -274,7 +274,7 @@ class MOVi(Dataset):
         return len(self.rgb)
 
     def __getitem__(self, idx):
-        
+
         img_loc = self.rgb[idx]
         img = Image.open(img_loc).convert("RGB")
         img = img.resize((self.image_size, self.image_size))
@@ -291,12 +291,56 @@ class MOVi(Dataset):
                 mask = self.val_transforms(mask)
                 masks += [mask]
             masks = torch.stack(masks, dim=0).squeeze().long()
-    
+
             mask_instance = torch.zeros((self.mask_size,self.mask_size), dtype=torch.long)
             mask_class = torch.zeros((self.mask_size,self.mask_size), dtype=torch.long) # There are no semantic segmentations in MOVi
             ignore_mask = torch.zeros((1,self.mask_size,self.mask_size), dtype=torch.long) # There is no overlapping in MOVi
-            
+
             for i, instance in enumerate(masks):
                 mask_instance[:, :] += instance * i
 
             return img, mask_instance, mask_class, ignore_mask
+
+
+class Repro(Dataset):
+    def __init__(self, root, split, image_size, mask_size, num_segs=25, frames_per_clip=24, img_glob='*_image.png', predefined_json_paths = None):
+        self.root = root
+        self.split = split
+        self.image_size = image_size
+        self.mask_size = mask_size
+
+        self.dataset_dir = Path(root)
+
+        self.width = image_size
+        self.height = image_size
+
+        files = []
+        files_path = "train.txt" if self.split == "train" else "val.txt"
+        with self.dataset_dir.joinpath(files_path).open("r") as fp:
+            files = [str(file.replace("data/", "").strip()) for file in fp]
+
+        self.files = np.array(files).astype(np.bytes_)
+
+        self.train_transform = transforms.Compose([transforms.ToTensor(),
+                                             transforms.Normalize((0.485, 0.456, 0.406),
+                                                                  (0.229, 0.224, 0.225))])
+        self.val_transforms = transforms.ToTensor()
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        img_path = str(self.files[idx], encoding="utf-8")
+        img = Image.open(self.dataset_dir / img_path)
+        if not img.mode == "RGB":
+            img = img.convert("RGB")
+        img = img.resize((self.image_size, self.image_size))
+        img = self.train_transform(img)
+        if self.split == "train":
+            return img
+
+        mask_instance = torch.zeros((self.mask_size,self.mask_size), dtype=torch.long)
+        mask_class = torch.zeros((self.mask_size,self.mask_size), dtype=torch.long) # There are no semantic segmentations in MOVi
+        ignore_mask = torch.zeros((1,self.mask_size,self.mask_size), dtype=torch.long)
+
+        return img, mask_instance, mask_class, ignore_mask
