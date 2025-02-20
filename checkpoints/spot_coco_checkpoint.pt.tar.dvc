@@ -1,0 +1,5 @@
+outs:
+- md5: ff93388fb05afd399b849931d627bd31
+  size: 851262655
+  hash: md5
+  path: spot_coco_checkpoint.pt.tar
