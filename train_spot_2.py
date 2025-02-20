@@ -103,8 +103,8 @@ def train(args):
         train_dataset = MOVi(root=os.path.join(args.data_path, 'train'), split='train', image_size=args.image_size, mask_size = args.image_size, frames_per_clip=9, predefined_json_paths = args.predefined_movi_json_paths)
         val_dataset = MOVi(root=os.path.join(args.data_path, 'validation'), split='validation', image_size=args.val_image_size, mask_size = args.val_mask_size)
     elif args.dataset == 'repro':
-        train_dataset = Repro(root=os.path.join(args.data_path, 'train'), split='train', image_size=args.image_size, mask_size = args.image_size, frames_per_clip=9, predefined_json_paths = args.predefined_movi_json_paths)
-        val_dataset = Repro(root=os.path.join(args.data_path, 'validation'), split='validation', image_size=args.val_image_size, mask_size = args.val_mask_size)
+        train_dataset = Repro(root=args.data_path, split='train', image_size=args.image_size, mask_size = args.image_size, frames_per_clip=9, predefined_json_paths = args.predefined_movi_json_paths)
+        val_dataset = Repro(root=args.data_path, split='validation', image_size=args.val_image_size, mask_size = args.val_mask_size)
 
     train_sampler = None
     val_sampler = None
