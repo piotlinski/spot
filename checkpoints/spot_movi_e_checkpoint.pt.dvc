@@ -1,0 +1,5 @@
+outs:
+- md5: fd9f40f34e7727627b569a82675ec29e
+  size: 851304736
+  hash: md5
+  path: spot_movi_e_checkpoint.pt

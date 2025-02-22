@@ -1,0 +1,5 @@
+outs:
+- md5: d516482cf591ecf0e8623262a831bf41
+  size: 851291424
+  hash: md5
+  path: spot_clevrtex_checkpoint.pt
